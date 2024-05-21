@@ -1,5 +1,19 @@
-class Server(public val clientPort: Int, public val serverPort: Int) {
-    lateinit var ip: String;
-    lateinit var port: String;
-    var clients: Int = 0;
+import java.io.PrintWriter
+import java.net.Socket
+
+class Server(val ip: String, val port: Int, val socket: Socket) {
+    var clients: Int = 0
+
+    fun addClient() {
+        clients++;
+    }
+
+    fun removeClient() {
+        clients--;
+    }
+
+    fun sendMessage(message: String) {
+        val output = PrintWriter(socket.getOutputStream().bufferedWriter(), true)
+        output.println(message)
+    }
 }

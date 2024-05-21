@@ -1,91 +1,151 @@
+import java.io.BufferedReader
+import java.io.PrintWriter
 import java.net.ServerSocket
 
 public fun main(args: Array<String>) {
-        val clientPort = 12345
-        val serverPort = 1307
+        val clientPort = 12344
+        val serverPort = 12347
+
         val servers = mutableListOf<Server>()
+        val serverLock = Any()
 
+        Thread {
+            try {
+                val serverSocket = ServerSocket(serverPort)
+                println("\u001B[36mServer serving started on port: $serverPort")
 
-        try {
-            val clientSocket = ServerSocket(clientPort)
-            println("Client serving started on port $clientPort")
+                while (true) {
+                    try {
+                        val serverSocket = serverSocket.accept()
+                        println("\u001B[36mServer connected: ${serverSocket.inetAddress.hostAddress}")
 
-            val serverSocket = ServerSocket(serverPort)
-            println("Server serving started on port $serverPort")
-
-            while (true) {
-                val clientSocket = clientSocket.accept()
-                println("Client connected: ${clientSocket.inetAddress.hostAddress}")
-
-                val serverSocket = serverSocket.accept()
-                println("Server connected: ${serverSocket.inetAddress.hostAddress}")
-
-                Thread {
-                    handleClient(clientSocket)
-                }.start()
-
-                Thread {
-                    handleServer(serverSocket)
-                }.start()
+                        Thread {
+                            handleServer(serverSocket, servers, serverLock)
+                        }.start()
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
+        }.start()
+
+        Thread {
+            try {
+                val clientSocket = ServerSocket(clientPort)
+                println("\u001B[32mClient serving started on port $clientPort")
+
+                while (true) {
+                    val clientSocket = clientSocket.accept()
+                    println("\u001B[32mClient connected: ${clientSocket.inetAddress.hostAddress}")
+
+                    Thread {
+                        handleClient(clientSocket, servers, serverLock)
+                    }.start()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }.start()
 }
 
-fun handleClient(clientSocket: java.net.Socket) {
-    val input = clientSocket.getInputStream().bufferedReader()
-    val output = clientSocket.getOutputStream().bufferedWriter()
+fun handleClient(clientSocket: java.net.Socket, servers: MutableList<Server>, serverLock: Any) {
+    val input = BufferedReader(clientSocket.getInputStream().bufferedReader())
+    val output = PrintWriter(clientSocket.getOutputStream().bufferedWriter(), true)
 
     try {
         var message = input.readLine()
-        println("kuksi")
         while (message != null) {
-            println("Received from client: $message")
+            println("\u001B[32mReceived from client: $message")
 
             if (message == "exit") {
                 break
             }
 
-            val responseData = "Response from server"
-            output.write(responseData)
-            output.newLine()
-            output.flush()
+            when (message) {
+                "rq//request_connection" -> {
+                    if (servers.isEmpty()) {
+                        output.println("rs//request_connection_error:no_servers")
+                        break
+                    }
 
-            message = input.readLine()
+                    var min = servers[0].clients
+                    var index = 0
+
+                    synchronized(serverLock) {
+                        for (server in servers) {
+                            if (server.clients < min) {
+                                min = server.clients
+                                index = servers.indexOf(server)
+                            }
+                        }
+                    }
+
+                    output.println("rs//request_connection_success:${servers[index].ip}:${servers[index].port}")
+                    break
+                }
+
+                "exit" -> {
+                    break
+                }
+
+                else -> {
+                    output.println("rs//unknown_command:$message")
+                    message = input.readLine()
+                }
+            }
         }
     } catch (e: Exception) {
         e.printStackTrace()
     } finally {
         clientSocket.close()
-        println("Client disconnected: ${clientSocket.inetAddress.hostAddress}")
+        println("\u001B[32mClient disconnected: ${clientSocket.inetAddress.hostAddress}")
     }
 }
 
-fun handleServer(serverSocket: java.net.Socket) {
-    val input = serverSocket.getInputStream().bufferedReader()
-    val output = serverSocket.getOutputStream().bufferedWriter()
+fun handleServer(serverSocket: java.net.Socket, servers: MutableList<Server>, serverLock: Any) {
+    val input = BufferedReader(serverSocket.getInputStream().bufferedReader())
+    val output = PrintWriter(serverSocket.getOutputStream().bufferedWriter(), true)
 
     try {
         var message = input.readLine()
         while (message != null) {
-            println("Received from server: $message")
+            println("\u001B[36mReceived from server: $message")
 
             if (message == "exit") {
                 break
             }
 
-            val responseData = "Response from client"
-            output.write(responseData)
-            output.newLine()
-            output.flush()
+            if (message.startsWith("cf//socket")) {
+                val parts = message.split(":")
+                val socket = parts[1].toInt()
+                val server = Server(serverSocket.inetAddress.hostAddress, socket, serverSocket)
+
+                synchronized(serverLock) {
+                    servers.add(server)
+                }
+
+                output.println("rs//connected:success")
+
+                if (servers.size > 1) {
+                    for (s in servers) {
+                        if (s != servers.last()) {
+                            s.sendMessage("cf//new_server:${server.ip}:${server.port}")
+                        }
+                    }
+                }
+            }
 
             message = input.readLine()
         }
     } catch (e: Exception) {
         e.printStackTrace()
     } finally {
+        synchronized(serverLock) {
+            servers.removeIf { it.socket == serverSocket }
+        }
         serverSocket.close()
-        println("Server disconnected: ${serverSocket.inetAddress.hostAddress}")
+        println("\u001B[36mServer disconnected: ${serverSocket.inetAddress.hostAddress}")
     }
 }
