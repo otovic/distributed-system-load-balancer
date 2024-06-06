@@ -6,7 +6,6 @@
   <component name="ChangeListManager">
     <list default="true" id="3035c440-0f46-4ebd-a003-3f3efa153901" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/Server.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/Server.kt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/kotlin/main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/kotlin/main.kt" afterDir="false" />
     </list>
@@ -48,7 +47,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "WebServerToolWindowFactoryState": "false",
-    "last_opened_file_path": "D:/distributed-system-load-balancer",
+    "last_opened_file_path": "D:/distributed-system-server",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -57,6 +56,7 @@
     "project.structure.last.edited": "Modules",
     "project.structure.proportion": "0.0",
     "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.general",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -71,7 +71,14 @@
       <workItem from="1716214207065" duration="6523000" />
       <workItem from="1716302447729" duration="6180000" />
       <workItem from="1716310080893" duration="14000" />
-      <workItem from="1716310848794" duration="2763000" />
+      <workItem from="1716310848794" duration="3140000" />
+      <workItem from="1716385389944" duration="4283000" />
+      <workItem from="1716640863985" duration="5229000" />
+      <workItem from="1716675093948" duration="676000" />
+      <workItem from="1716717841436" duration="2324000" />
+      <workItem from="1716748658797" duration="1334000" />
+      <workItem from="1716751153505" duration="692000" />
+      <workItem from="1717706763934" duration="7244000" />
     </task>
     <servers />
   </component>

@@ -1,7 +1,7 @@
 import java.io.PrintWriter
 import java.net.Socket
 
-class Server(val ip: String, val port: Int, val socket: Socket) {
+class Server(val ip: String, val openSockets: MutableList<Int>, val socket: Socket) {
     var clients: Int = 0
 
     fun addClient() {

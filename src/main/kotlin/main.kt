@@ -74,6 +74,7 @@ fun handleClient(clientSocket: java.net.Socket, servers: MutableList<Server>, se
                     var index = 0
 
                     synchronized(serverLock) {
+                        println("\u001B[32mServers: ${servers.size}")
                         for (server in servers) {
                             if (server.clients < min) {
                                 min = server.clients
@@ -82,7 +83,9 @@ fun handleClient(clientSocket: java.net.Socket, servers: MutableList<Server>, se
                         }
                     }
 
-                    output.println("rs//request_connection_success:${servers[index].ip}:${servers[index].port}")
+                    servers[index].addClient()
+
+                    output.println("rs//request_connection_success:${servers[index].ip}:${servers[index].openSockets[0]}:${servers[index].openSockets[1]}:${servers[index].openSockets[2]}")
                     break
                 }
 
@@ -119,8 +122,11 @@ fun handleServer(serverSocket: java.net.Socket, servers: MutableList<Server>, se
 
             if (message.startsWith("cf//socket")) {
                 val parts = message.split(":")
-                val socket = parts[1].toInt()
-                val server = Server(serverSocket.inetAddress.hostAddress, socket, serverSocket)
+                val sockets = intArrayOf().toMutableList()
+                for (i in 1 until parts.size) {
+                    sockets.add(parts[i].toInt())
+                }
+                val server = Server(serverSocket.inetAddress.hostAddress, sockets, serverSocket)
 
                 synchronized(serverLock) {
                     servers.add(server)
@@ -131,7 +137,9 @@ fun handleServer(serverSocket: java.net.Socket, servers: MutableList<Server>, se
                 if (servers.size > 1) {
                     for (s in servers) {
                         if (s != servers.last()) {
-                            s.sendMessage("cf//new_server:${server.ip}:${server.port}")
+                            println("\u001B[36mSending new server to ${s.ip}")
+                            s.sendMessage("cf//new_server:${server.ip}:${server.openSockets[0]}:${server.openSockets[1]}:${server.openSockets[2]}")
+                            output.println("cf//new_server:${s.ip}:${s.openSockets[0]}:${s.openSockets[1]}:${s.openSockets[2]}")
                         }
                     }
                 }
@@ -143,9 +151,19 @@ fun handleServer(serverSocket: java.net.Socket, servers: MutableList<Server>, se
         e.printStackTrace()
     } finally {
         synchronized(serverLock) {
-            servers.removeIf { it.socket == serverSocket }
+            if (servers.size > 1) {
+                for (s in servers) {
+                    if (s.socket == serverSocket) {
+                        servers.remove(s)
+                    } else {
+                        s.sendMessage("cf//remove_server:${serverSocket.inetAddress.hostAddress}")
+                    }
+                }
+            }
+            println("Removed server: ${serverSocket.inetAddress.hostAddress}")
         }
         serverSocket.close()
         println("\u001B[36mServer disconnected: ${serverSocket.inetAddress.hostAddress}")
+        println("\u001B[36mServers: ${servers.size}")
     }
 }
